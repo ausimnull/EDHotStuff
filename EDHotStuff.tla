@@ -17,24 +17,13 @@
  (* algorithms.  There are several parts that are implementation           *)
  (* dependent, namely how the parent chains are implemented, and how       *)
  (* leaders are selected.  I have chosen the simplest possible             *)
- (* implemetations in this version.                                        *)
+ (* implementations in this version.                                       *)
  (*                                                                        *)
- (* This version is incomplete, but does run in the TLC model checker.  No *)
- (* attempt has been made yet to define any invariants                     *)
  (*                                                                        *)
  (**************************************************************************) 
 
 ----------------------------------------------------------------------------
 CONSTANT Value, Acceptor, FakeAcceptor
-
-CONSTANTS
-        ByzQuorum  \* not currently used
-            (***************************************************************)
-            (* A Byzantine quorum is set of acceptors that includes a      *)
-            (* quorum of good ones.  In the case that there are 2f+1 good  *)
-            (* acceptors and f bad ones, a Byzantine quorum is any set of  *)
-            (* 2f+1 acceptors.                                             *)
-            (***************************************************************)
     
 ViewNums == Nat 
 
@@ -52,14 +41,18 @@ Leaf      ==    [parent  : Acceptor, cmd  : Value, justify : {}, height : {}]
 
 Message   ==    [type: "generic", viewnum : ViewNums, node : Leaf, justify : << >>]
            \cup [type: "newview", viewnum : ViewNums, node : Leaf, justify : << >>] \* always sent to leader
-
-\* QC = ???? FIXME
            
 EmptyQC   ==    {}
 EmptyNode ==    [parent : {}, cmd : {}, justify : {}, height : {}]
 EmptyV    ==    [x \in {} |-> TRUE]  \* empty function (nothing is TRUE !)
 
 ByzAcceptor == Acceptor \cup FakeAcceptor
+
+(***************************************************************************)
+(* We construct the genesis node b0 as a chain of 4 nodes.  When the first *)
+(* real Value is proposed the genesis_bpp node will be executed, and so on *)
+(* up the chain as more Values are proposed.                               *)
+(***************************************************************************)
 
 genesis_null  ==  [ parent  |-> << 
                                  << >> 
@@ -150,7 +143,7 @@ b0           ==  [ parent  |-> <<
 (*                                                                         *)
 (***************************************************************************)
         
-(****
+(*
 --algorithm EDHotStuff {
     variables
         (*******************************************************************)
@@ -205,10 +198,10 @@ b0           ==  [ parent  |-> <<
     define {
         CreateLeaf(p, v2, qc1, h) == [parent |-> p, cmd |-> v2, justify |-> qc1, height |-> h]
         
-        GETLEADER ==  "a1" \* FROB - should select fro Acceptor set
+        GETLEADER ==  "a1" \* a constant for simplicity
         
         (* bend extends bstart => TRUE iff bend has an ancestor (parent) in common with bstart *)
-        Extends(bstart, bend) ==  TRUE \* TODO
+        Extends(bstart, bend) ==  TRUE \* for simplicity we assume that this is always true
         
         Range(T) == { T[x] : x \in DOMAIN T }
     }
@@ -328,11 +321,10 @@ b0           ==  [ parent  |-> <<
     }
     
     procedure MakeQC(vb) { 
-        \* vb is a set {[ votemessage ], ... } for node b -   FIXME
         mqc1: 
-            qc[self] := [ viewnum |->  vb.justify.viewnum,  \* FIXME
+            qc[self] := [ viewnum |->  vb.justify.viewnum,
                           node    |->  vb, 
-                          sig     |->  vb.justify.sig ];    \* FIXME - maybe better as a set of sigs as per paper
+                          sig     |->  vb.justify.sig ];
         mcq_return:
             return; \* return in qc[self]
     }
@@ -470,8 +462,9 @@ b0           ==  [ parent  |-> <<
             };
     }
 }
-**)
+*)
+
 =============================================================================
 \* Modification History
-\* Last modified Sat Mar 07 15:31:15 GMT 2020 by steve
+\* Last modified Mon Mar 09 07:58:46 GMT 2020 by steve
 \* Created Thu Feb 20 12:24:16 GMT 2020 by steve
