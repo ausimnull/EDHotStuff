@@ -29,6 +29,8 @@ ViewNums == Nat
 
 None == CHOOSE v : v \notin Value /\ v \notin Acceptor /\ v \notin FakeAcceptor
    
+ByzAcceptor == Acceptor \cup FakeAcceptor   
+   
 (***************************************************************************)
 (* The following operator definitions allow us to form a TYPE_OK           *)
 (* invariant.                                                              *)
@@ -36,8 +38,8 @@ None == CHOOSE v : v \notin Value /\ v \notin Acceptor /\ v \notin FakeAcceptor
 (***************************************************************************)
     
 RECURSIVE Leaf       
-QCElement ==    [viewNum : ViewNums, node : Leaf,      sig : Acceptor]           
-Leaf      ==    [parent  : Acceptor, cmd  : Value, justify : {}, height : {}]
+QCElement ==    [viewNum : ViewNums, node : Leaf,      sig : ByzAcceptor]           
+Leaf      ==    [parent  : ByzAcceptor, cmd  : Value, justify : {}, height : {}]
 
 Message   ==    [type: "generic", viewnum : ViewNums, node : Leaf, justify : << >>]
            \cup [type: "newview", viewnum : ViewNums, node : Leaf, justify : << >>] \* always sent to leader
@@ -45,8 +47,6 @@ Message   ==    [type: "generic", viewnum : ViewNums, node : Leaf, justify : << 
 EmptyQC   ==    {}
 EmptyNode ==    [parent : {}, cmd : {}, justify : {}, height : {}]
 EmptyV    ==    [x \in {} |-> TRUE]  \* empty function (nothing is TRUE !)
-
-ByzAcceptor == Acceptor \cup FakeAcceptor
 
 (***************************************************************************)
 (* We construct the genesis node b0 as a chain of 4 nodes.  When the first *)
@@ -163,37 +163,37 @@ b0           ==  [ parent  |-> <<
         (* to the correct height.                                          *)
         (*                                                                 *)
         (*******************************************************************)
-        Ledger              = [a \in Acceptor |-> << >>],       \* A ledger for each Acceptor  
+        Ledger              = [a \in ByzAcceptor |-> << >>],       \* A ledger for each Acceptor  
         sentValues          = {},   
         
         \* communication channels
-        voteChannel         = [a \in Acceptor |-> << >>],
-        newViewChannel      = [a \in Acceptor |-> << >>],
+        voteChannel         = [a \in ByzAcceptor |-> << >>],
+        newViewChannel      = [a \in ByzAcceptor |-> << >>],
         proposalChannel     = << >>,                            \* global, as this is for broadcasts
-        lastReadProposal    = [a \in Acceptor |-> 0],
+        lastReadProposal    = [a \in ByzAcceptor |-> 0],
     
         \* per process state variables (as per HS paper)
-        vheight             = [a \in Acceptor |-> 0],           \* height of last voted node.
-        block               = [a \in Acceptor |-> EmptyNode],   \* locked node (similar to lockedQC ).
-        bexec               = [a \in Acceptor |-> EmptyNode],   \* last executed node.
-        qchigh              = [a \in Acceptor |-> << >>],       \* highest known QC (similar to genericQC ) kept by a Pacemaker.
-        bleaf               = [a \in Acceptor |-> EmptyNode],   \* leaf node kept by PaceMaker
-        curView             = [a \in Acceptor |-> 0],     
-        V                   = [a \in Acceptor |-> EmptyV], 
+        vheight             = [a \in ByzAcceptor |-> 0],           \* height of last voted node.
+        block               = [a \in ByzAcceptor |-> EmptyNode],   \* locked node (similar to lockedQC ).
+        bexec               = [a \in ByzAcceptor |-> EmptyNode],   \* last executed node.
+        qchigh              = [a \in ByzAcceptor |-> << >>],       \* highest known QC (similar to genericQC ) kept by a Pacemaker.
+        bleaf               = [a \in ByzAcceptor |-> EmptyNode],   \* leaf node kept by PaceMaker
+        curView             = [a \in ByzAcceptor |-> 0],     
+        V                   = [a \in ByzAcceptor |-> EmptyV], 
         
         \* the 3-chain
-        b                   = [a \in Acceptor |-> EmptyNode],
-        bp                  = [a \in Acceptor |-> EmptyNode],
-        bpp                 = [a \in Acceptor |-> EmptyNode],
+        b                   = [a \in ByzAcceptor |-> EmptyNode],
+        bp                  = [a \in ByzAcceptor |-> EmptyNode],
+        bpp                 = [a \in ByzAcceptor |-> EmptyNode],
         
         \* internal variables
-        nextEventFlag       = [a \in Acceptor |-> FALSE],
-        nextEventLOCK       = [a \in Acceptor |-> FALSE],
-        qc                  = [a \in Acceptor |-> << >>],
-        mvote               = [a \in Acceptor |-> << >>],
-        mprop               = [a \in Acceptor |-> << >>],
-        mnew                = [a \in Acceptor |-> << >>], 
-        VEntry              = [a \in Acceptor |-> {}],        
+        nextEventFlag       = [a \in ByzAcceptor |-> FALSE],
+        nextEventLOCK       = [a \in ByzAcceptor |-> FALSE],
+        qc                  = [a \in ByzAcceptor |-> << >>],
+        mvote               = [a \in ByzAcceptor |-> << >>],
+        mprop               = [a \in ByzAcceptor |-> << >>],
+        mnew                = [a \in ByzAcceptor |-> << >>], 
+        VEntry              = [a \in ByzAcceptor |-> {}],        
              
     define {
         CreateLeaf(p, v2, qc1, h) == [parent |-> p, cmd |-> v2, justify |-> qc1, height |-> h]
@@ -466,5 +466,5 @@ b0           ==  [ parent  |-> <<
 
 =============================================================================
 \* Modification History
-\* Last modified Mon Mar 09 07:58:46 GMT 2020 by steve
+\* Last modified Tue Mar 10 15:16:15 GMT 2020 by steve
 \* Created Thu Feb 20 12:24:16 GMT 2020 by steve
